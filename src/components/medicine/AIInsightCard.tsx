@@ -1,15 +1,28 @@
 import React, { useState } from 'react';
-import { AIInsight } from '@/types/medicine';
-import { Sparkles, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { AIInsight, Medicine } from '@/types/medicine';
+import { Sparkles, ChevronDown, ChevronUp, AlertTriangle, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SavingsBadge } from './SavingsBadge';
 
 interface AIInsightCardProps {
   insight: AIInsight;
+  generics?: Medicine[];
+  onGenericClick?: (generic: Medicine) => void;
   className?: string;
 }
 
-export const AIInsightCard: React.FC<AIInsightCardProps> = ({ insight, className }) => {
+export const AIInsightCard: React.FC<AIInsightCardProps> = ({ 
+  insight, 
+  generics = [],
+  onGenericClick,
+  className 
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Get top 3 cheaper alternatives
+  const topAlternatives = generics
+    .filter(g => g.priceCategory === 'cheaper' || g.priceCategory === 'moderate')
+    .slice(0, 3);
 
   return (
     <div className={cn(
@@ -35,6 +48,44 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({ insight, className
           <p className="text-sm font-medium text-success">{insight.savingsHighlight}</p>
         </div>
       </div>
+
+      {/* Top Generic Suggestions */}
+      {topAlternatives.length > 0 && (
+        <div className="px-4 pb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingDown className="w-4 h-4 text-primary" />
+            <p className="text-xs font-semibold text-primary uppercase tracking-wide">
+              Top Lower-Cost Options
+            </p>
+          </div>
+          <div className="space-y-2">
+            {topAlternatives.map((generic) => (
+              <button
+                key={generic.id}
+                onClick={() => onGenericClick?.(generic)}
+                className="w-full flex items-center justify-between p-3 bg-background/80 rounded-xl border border-border hover:border-primary/40 hover:bg-background transition-all text-left"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground text-sm truncate">
+                    {generic.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {generic.manufacturer} • {generic.strength}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 ml-3">
+                  {generic.relativePrice && (
+                    <span className="text-xs font-bold text-success whitespace-nowrap">
+                      {generic.relativePrice}
+                    </span>
+                  )}
+                  <SavingsBadge priceCategory={generic.priceCategory || 'moderate'} size="sm" showLabel={false} />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Expandable content */}
       <button
