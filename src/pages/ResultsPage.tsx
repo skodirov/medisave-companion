@@ -51,7 +51,12 @@ const ResultsPage: React.FC = () => {
         </div>
 
         {/* AI Insight */}
-        <AIInsightCard insight={result.aiInsight} className="mb-6" />
+        <AIInsightCard 
+          insight={result.aiInsight} 
+          generics={result.generics}
+          onGenericClick={(generic) => navigate(`/compare/${result.branded.id}/${generic.id}`)}
+          className="mb-6" 
+        />
 
         {/* Generic Alternatives */}
         <div>
