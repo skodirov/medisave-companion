@@ -66,19 +66,20 @@ const isValidStoredMedicine = (item: unknown): item is StoredSavedMedicine => {
 
 
 const isValidDate = (date: Date): boolean => {
-  return date instanceof Date && !isNaN(date.getTime());
+  return date instanceof Date && !Number.isNaN(date.getTime());
 };
 
 const loadFromStorage = (): SavedMedicine[] => {
-  try {
-    const storage = getStorage();
-if (!storage) return [];
+  const storage = getStorage();
+  if (!storage) return [];
 
-const stored = storage.getItem(STORAGE_KEY);
-    
+  try {
+    const stored = storage.getItem(STORAGE_KEY);
+    if (!stored) return [];
+
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed)) return [];
-    
+
     return parsed
       .filter(isValidStoredMedicine)
       .map((item) => ({
@@ -87,10 +88,11 @@ const stored = storage.getItem(STORAGE_KEY);
       }))
       .filter((item) => isValidDate(item.savedAt));
   } catch (e) {
-    console.error('Failed to parse saved medicines:', e);
+    console.warn('Failed to parse saved medicines:', e);
     return [];
   }
 };
+
 
 export const useSavedMedicines = () => {
   const [savedMedicines, setSavedMedicines] = useState<SavedMedicine[]>(() => loadFromStorage());
