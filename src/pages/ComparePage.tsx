@@ -10,14 +10,23 @@ import { useSavedMedicines } from '@/hooks/useSavedMedicines';
 import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
+const VALID_ID_PATTERN = /^[a-zA-Z0-9-]+$/;
+
+const isValidId = (id: string | undefined): id is string => {
+  return Boolean(id && id.length <= 100 && VALID_ID_PATTERN.test(id));
+};
+
 const ComparePage: React.FC = () => {
   const { brandId, genericId } = useParams<{ brandId: string; genericId: string }>();
   const navigate = useNavigate();
   const { saveMedicine, removeSavedMedicine, findSavedMedicine, isSaved } = useSavedMedicines();
 
-  const result = brandId ? getSearchResults(brandId) : null;
-  const generic = genericId && brandId
-    ? genericAlternatives[brandId]?.find(g => g.id === genericId)
+  const validBrandId = isValidId(brandId) ? brandId : null;
+  const validGenericId = isValidId(genericId) ? genericId : null;
+
+  const result = validBrandId ? getSearchResults(validBrandId) : null;
+  const generic = validGenericId && validBrandId
+    ? genericAlternatives[validBrandId]?.find(g => g.id === validGenericId)
     : null;
 
   if (!result || !generic) {
