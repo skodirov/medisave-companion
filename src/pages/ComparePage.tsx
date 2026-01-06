@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 const ComparePage: React.FC = () => {
   const { brandId, genericId } = useParams<{ brandId: string; genericId: string }>();
   const navigate = useNavigate();
-  const { saveMedicine, removeSavedMedicine, isSaved } = useSavedMedicines();
+  const { saveMedicine, removeSavedMedicine, findSavedMedicine, isSaved } = useSavedMedicines();
 
   const result = brandId ? getSearchResults(brandId) : null;
   const generic = genericId && brandId
@@ -40,8 +40,11 @@ const ComparePage: React.FC = () => {
 
   const handleSave = () => {
     if (isCurrentlySaved) {
-      // Find and remove
-      toast.info('Removed from saved medicines');
+      const savedEntry = findSavedMedicine(result.branded.id, generic.id);
+      if (savedEntry) {
+        removeSavedMedicine(savedEntry.id);
+        toast.info('Removed from saved medicines');
+      }
     } else {
       saveMedicine(result.branded, generic);
       toast.success('Saved to your list!');

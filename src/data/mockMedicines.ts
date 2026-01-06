@@ -214,10 +214,26 @@ export const getSearchResults = (brandId: string): SearchResult | null => {
 };
 
 export const searchBrandedMedicines = (query: string): Medicine[] => {
-  if (!query.trim()) return [];
-  const lowerQuery = query.toLowerCase();
+  const trimmed = query.trim();
+  if (!trimmed || trimmed.length < 2) return [];
+  
+  const lowerQuery = trimmed.toLowerCase();
   return brandedMedicines.filter(
     m => m.name.toLowerCase().includes(lowerQuery) ||
          m.activeIngredient.toLowerCase().includes(lowerQuery)
   );
+};
+
+export const getMedicineById = (id: string): Medicine | undefined => {
+  // Check branded medicines first
+  const branded = brandedMedicines.find(m => m.id === id);
+  if (branded) return branded;
+  
+  // Search in generics
+  for (const generics of Object.values(genericAlternatives)) {
+    const found = generics.find(g => g.id === id);
+    if (found) return found;
+  }
+  
+  return undefined;
 };
