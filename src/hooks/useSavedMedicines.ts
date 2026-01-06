@@ -2,6 +2,48 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { SavedMedicine, Medicine } from '@/types/medicine';
 
 const STORAGE_KEY = 'medisave_saved_medicines';
+const getStorage = (): Storage | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isValidMedicine = (value: unknown): value is Medicine => {
+  if (!isRecord(value)) return false;
+  const obj = value as Record<string, unknown>;
+
+  return (
+    typeof obj.id === 'string' &&
+    typeof obj.name === 'string' &&
+    typeof obj.manufacturer === 'string' &&
+    typeof obj.activeIngredient === 'string' &&
+    typeof obj.strength === 'string' &&
+    typeof obj.dosageForm === 'string' &&
+    typeof obj.type === 'string' &&
+    typeof obj.priceCategory === 'string' &&
+    typeof obj.confidenceLevel === 'string' &&
+    typeof obj.packSize === 'string' &&
+    typeof obj.relativePrice === 'string'
+  );
+};
+
+const writeToStorage = (items: SavedMedicine[]) => {
+  const storage = getStorage();
+  if (!storage) return;
+
+  try {
+    storage.setItem(STORAGE_KEY, JSON.stringify(items));
+  } catch (e) {
+    console.warn('Failed to persist saved medicines to localStorage:', e);
+  }
+};
+
 
 interface StoredSavedMedicine {
   id: string;
@@ -11,15 +53,17 @@ interface StoredSavedMedicine {
 }
 
 const isValidStoredMedicine = (item: unknown): item is StoredSavedMedicine => {
-  if (typeof item !== 'object' || item === null) return false;
+  if (!isRecord(item)) return false;
   const obj = item as Record<string, unknown>;
+
   return (
     typeof obj.id === 'string' &&
-    typeof obj.brandedMedicine === 'object' &&
-    typeof obj.selectedGeneric === 'object' &&
-    typeof obj.savedAt === 'string'
+    typeof obj.savedAt === 'string' &&
+    isValidMedicine(obj.brandedMedicine) &&
+    isValidMedicine(obj.selectedGeneric)
   );
 };
+
 
 const isValidDate = (date: Date): boolean => {
   return date instanceof Date && !isNaN(date.getTime());
@@ -27,8 +71,10 @@ const isValidDate = (date: Date): boolean => {
 
 const loadFromStorage = (): SavedMedicine[] => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return [];
+    const storage = getStorage();
+if (!storage) return [];
+
+const stored = storage.getItem(STORAGE_KEY);
     
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed)) return [];
@@ -77,7 +123,7 @@ export const useSavedMedicines = () => {
       if (exists) return prev;
       
       const updated = [...prev, newSaved];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      writeToStorage(updated);
       return updated;
     });
     
@@ -87,7 +133,7 @@ export const useSavedMedicines = () => {
   const removeSavedMedicine = useCallback((id: string) => {
     setSavedMedicines((prev) => {
       const updated = prev.filter((m) => m.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      writeToStorage(updated);
       return updated;
     });
   }, []);
