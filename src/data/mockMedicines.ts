@@ -197,14 +197,27 @@ export const aiInsights: Record<string, AIInsight> = {
   },
 };
 
+const VALID_ID_PATTERN = /^[a-zA-Z0-9-]+$/;
+
+const sanitizeId = (id: string): string | null => {
+  const trimmed = id?.trim();
+  if (!trimmed || trimmed.length > 100 || !VALID_ID_PATTERN.test(trimmed)) {
+    return null;
+  }
+  return trimmed;
+};
+
 export const getSearchResults = (brandId: string): SearchResult | null => {
-  const branded = brandedMedicines.find(m => m.id === brandId);
+  const sanitizedId = sanitizeId(brandId);
+  if (!sanitizedId) return null;
+
+  const branded = brandedMedicines.find(m => m.id === sanitizedId);
   if (!branded) return null;
   
   return {
     branded,
-    generics: genericAlternatives[brandId] || [],
-    aiInsight: aiInsights[brandId] || {
+    generics: genericAlternatives[sanitizedId] || [],
+    aiInsight: aiInsights[sanitizedId] || {
       summary: 'Checking for alternatives...',
       equivalenceExplanation: 'Analysis in progress.',
       savingsHighlight: 'Calculating potential savings.',
@@ -225,13 +238,16 @@ export const searchBrandedMedicines = (query: string): Medicine[] => {
 };
 
 export const getMedicineById = (id: string): Medicine | undefined => {
+  const sanitizedId = sanitizeId(id);
+  if (!sanitizedId) return undefined;
+
   // Check branded medicines first
-  const branded = brandedMedicines.find(m => m.id === id);
+  const branded = brandedMedicines.find(m => m.id === sanitizedId);
   if (branded) return branded;
   
   // Search in generics
   for (const generics of Object.values(genericAlternatives)) {
-    const found = generics.find(g => g.id === id);
+    const found = generics.find(g => g.id === sanitizedId);
     if (found) return found;
   }
   

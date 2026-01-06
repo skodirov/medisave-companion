@@ -21,6 +21,10 @@ const isValidStoredMedicine = (item: unknown): item is StoredSavedMedicine => {
   );
 };
 
+const isValidDate = (date: Date): boolean => {
+  return date instanceof Date && !isNaN(date.getTime());
+};
+
 const loadFromStorage = (): SavedMedicine[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -34,7 +38,8 @@ const loadFromStorage = (): SavedMedicine[] => {
       .map((item) => ({
         ...item,
         savedAt: new Date(item.savedAt),
-      }));
+      }))
+      .filter((item) => isValidDate(item.savedAt));
   } catch (e) {
     console.error('Failed to parse saved medicines:', e);
     return [];
